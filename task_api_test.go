@@ -57,3 +57,34 @@ func TestDeleteTask_ExistingTaskReturnsNoContentAndRemovesIt(t *testing.T) {
 		t.Fatalf("削除後の件数が不正です: want=0 got=%d", count)
 	}
 }
+
+func TestDeleteTask_UnknownIDReturnsNotFoundAndKeepsExistingTask(t *testing.T) {
+	repository := newRepositoryForTest(t)
+	if err := repository.Create(context.Background(), Task{ID: "task-kept", Title: "保持対象"}); err != nil {
+		t.Fatalf("初期データを作成できません: %v", err)
+	}
+
+	request := httptest.NewRequest(http.MethodDelete, "/tasks/task-missing", nil)
+	response := httptest.NewRecorder()
+	NewRouter(repository).ServeHTTP(response, request)
+
+	if response.Code != http.StatusNotFound {
+		t.Errorf("存在しないIDへの削除応答が不正です: want=%d got=%d", http.StatusNotFound, response.Code)
+	}
+
+	missingCount, err := repository.CountByID(context.Background(), "task-missing")
+	if err != nil {
+		t.Fatalf("削除対象IDの件数を確認できません: %v", err)
+	}
+	if missingCount != 0 {
+		t.Errorf("存在しないIDの件数が不正です: want=0 got=%d", missingCount)
+	}
+
+	keptCount, err := repository.CountByID(context.Background(), "task-kept")
+	if err != nil {
+		t.Fatalf("保持対象IDの件数を確認できません: %v", err)
+	}
+	if keptCount != 1 {
+		t.Errorf("保持対象の件数が不正です: want=1 got=%d", keptCount)
+	}
+}

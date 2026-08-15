@@ -1,0 +1,6 @@
+=== RUN   TestDeleteTask_UnknownIDReturnsNotFoundAndKeepsExistingTask
+    task_api_test.go:72: 存在しないIDへの削除応答が不正です: want=404 got=204
+--- FAIL: TestDeleteTask_UnknownIDReturnsNotFoundAndKeepsExistingTask (0.00s)
+FAIL
+FAIL	github.com/tonbiattack/go-gorm-delete-notfound-debug-lab	0.006s
+FAIL
