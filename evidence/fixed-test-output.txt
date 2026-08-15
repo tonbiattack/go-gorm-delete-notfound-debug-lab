@@ -1,0 +1,4 @@
+=== RUN   TestDeleteTask_UnknownIDReturnsNotFoundAndKeepsExistingTask
+--- PASS: TestDeleteTask_UnknownIDReturnsNotFoundAndKeepsExistingTask (0.00s)
+PASS
+ok  	github.com/tonbiattack/go-gorm-delete-notfound-debug-lab	0.007s

@@ -2,6 +2,7 @@ package taskapi
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -13,6 +14,9 @@ type Task struct {
 	ID    string `gorm:"primaryKey"`
 	Title string `gorm:"not null"`
 }
+
+// ErrTaskNotFound は削除対象が存在しないことを表します。
+var ErrTaskNotFound = errors.New("task not found")
 
 // Repository はタスクの永続化を担当します。
 type Repository struct {
@@ -30,10 +34,15 @@ func (r *Repository) Create(ctx context.Context, task Task) error {
 }
 
 // DeleteByID はIDに一致するタスクを削除します。
-// バグ状態では削除件数を確認せず、SQL実行エラーだけを呼び出し元へ返します。
 func (r *Repository) DeleteByID(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Delete(&Task{}, "id = ?", id)
-	return result.Error
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrTaskNotFound
+	}
+	return nil
 }
 
 // CountByID は指定IDのタスク件数を返します。
@@ -59,6 +68,10 @@ func NewRouter(repository *Repository) http.Handler {
 		}
 
 		if err := repository.DeleteByID(request.Context(), id); err != nil {
+			if errors.Is(err, ErrTaskNotFound) {
+				writer.WriteHeader(http.StatusNotFound)
+				return
+			}
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
